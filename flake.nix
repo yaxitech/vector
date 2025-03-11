@@ -57,8 +57,17 @@
             cargoExtraArgs = "-F api,api-client,sinks-azure_monitor_logs_dce,sinks-console,sinks-prometheus,sources-file,sources-host_metrics,sources-journald,sources-prometheus-scrape,transforms-remap --no-default-features";
             doCheck = false;
 
+            CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+            preConfigure = ''
+              export CC="${pkgs.musl.dev}/bin/musl-gcc";
+            '';
+
             PROTOC = "${pkgs.protobuf}/bin/protoc";
             PROTOC_INCLUDE = "${pkgs.protobuf}/include";
+
+            postInstall = ''
+              rm "$out/bin/secret-backend-example"
+            '';
 
             meta = with lib; {
               description = "A lightweight, ultra-fast tool for building observability pipelines";
