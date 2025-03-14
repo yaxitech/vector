@@ -33,6 +33,17 @@
       };
 
       lib = nixpkgs.lib;
+
+      yaxiOverlay = overlay: final: prev: with lib; {
+        yaxi = recurseIntoAttrs (
+          # We always want to replace not merge derivations
+          recursiveUpdateUntil (path: lhs: rhs: !(isAttrs lhs && !isDerivation lhs && isAttrs rhs && !isDerivation rhs))
+            # Consider any existing overlay
+            (prev.yaxi or { })
+            # Merge with this overlay definition
+            (overlay final prev)
+        );
+      };
     in
     lib.foldl lib.recursiveUpdate { } [
       (flake-utils.lib.eachDefaultSystem (system:
@@ -91,9 +102,10 @@
         }))
 
       {
-        overlays.default = final: _prev: {
+        overlays.vector = yaxiOverlay (final: _prev: {
           vector = self.packages.${final.system}.default;
-        };
+        });
+        overlays.default = self.overlays.vector;
       }
     ];
 }
